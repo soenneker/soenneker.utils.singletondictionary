@@ -217,4 +217,18 @@ public class SingletonDictionaryTests
 
         await httpClientSingleton.DisposeAsync();
     }
+
+    [Fact]
+    public void Remove_sync_should_remove_instance()
+    {
+        var httpClientSingleton = new SingletonDictionary<HttpClient>(InitializeFunc);
+
+        HttpClient result = httpClientSingleton.GetSync("arst", 100);
+
+        httpClientSingleton.RemoveSync("arst");
+
+        result = httpClientSingleton.GetSync("arst", 200);
+
+        result.Timeout.TotalSeconds.Should().Be(200);
+    }
 }

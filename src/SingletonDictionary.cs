@@ -15,7 +15,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
     private readonly AsyncLock _lock;
 
     private Func<object[]?, Task<T>>? _asyncInitializationFunc;
-    private Func<object[], T>? _initializationFunc;
+    private Func<object[]?, T>? _initializationFunc;
 
     private bool _disposed;
 
@@ -110,6 +110,46 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         _initializationFunc = initializationFunc;
     }
 
+    public async ValueTask Remove(string key)
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+
+        if (_dictionary!.TryGetValue(key, out T? instance))
+        {
+            await DisposeInstanceAsync(key, instance).ConfigureAwait(false);
+            return;
+        }
+
+        using (await _lock.LockAsync())
+        {
+            if (_dictionary.TryGetValue(key, out instance))
+            {
+                await DisposeInstanceAsync(key, instance).ConfigureAwait(false);
+            }
+        }
+    }
+
+    public void RemoveSync(string key)
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+
+        if (_dictionary!.TryGetValue(key, out T? instance))
+        {
+            DisposeInstance(key, instance);
+            return;
+        }
+
+        using (_lock.Lock())
+        {
+            if (_dictionary.TryGetValue(key, out instance))
+            {
+                DisposeInstance(key, instance);
+            }
+        }
+    }
+
     public void Dispose()
     {
         _disposed = true;
@@ -122,20 +162,30 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
 
         foreach (KeyValuePair<string, T> kvp in _dictionary)
         {
-            switch (kvp.Value)
-            {
-                case IDisposable disposable:
-                    disposable.Dispose();
-                    break;
-                case IAsyncDisposable asyncDisposable:
-                    // Kind of a weird situation - basically the instance is IAsyncDisposable but it's being disposed synchronously (which can happen).
-                    // Hopefully this object is IDisposable because this is not guaranteed to block, but we'll try anyways
-                    _ = asyncDisposable.DisposeAsync().ConfigureAwait(false);
-                    break;
-            }
+            DisposeInstance(kvp.Key, kvp.Value);
         }
 
         _dictionary = null;
+    }
+
+    private void DisposeInstance(string key, T instance)
+    {
+        switch (instance)
+        {
+            case IDisposable disposable:
+                disposable.Dispose();
+                break;
+            case IAsyncDisposable asyncDisposable:
+                // Kind of a weird situation - basically the instance is IAsyncDisposable but it's being disposed synchronously (which can happen).
+                // Hopefully this object is IDisposable because this is not guaranteed to block, but we'll try anyways
+                _ = asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                break;
+        }
+
+        if (_dictionary == null || _dictionary.IsEmpty)
+            return;
+
+        _dictionary.TryRemove(key, out _);
     }
 
     public async ValueTask DisposeAsync()
@@ -150,17 +200,27 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
 
         foreach (KeyValuePair<string, T> kvp in _dictionary)
         {
-            switch (kvp.Value)
-            {
-                case IAsyncDisposable asyncDisposable:
-                    await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-                    break;
-                case IDisposable disposable:
-                    disposable.Dispose();
-                    break;
-            }
+            await DisposeInstanceAsync(kvp.Key, kvp.Value).ConfigureAwait(false);
         }
 
         _dictionary = null;
+    }
+
+    private async ValueTask DisposeInstanceAsync(string key, T instance)
+    {
+        switch (instance)
+        {
+            case IAsyncDisposable asyncDisposable:
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                break;
+            case IDisposable disposable:
+                disposable.Dispose();
+                break;
+        }
+
+        if (_dictionary == null || _dictionary.IsEmpty)
+            return;
+
+        _dictionary.TryRemove(key, out _);
     }
 }

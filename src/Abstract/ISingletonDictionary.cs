@@ -41,6 +41,16 @@ public interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
     void SetInitialization(Func<object[]?, T> initializationFunc);
 
     /// <summary>
+    /// Includes disposal of the key if applicable. Recommended over <see cref="RemoveSync"/>
+    /// </summary>
+    ValueTask Remove(string key);
+
+    /// <summary>
+    /// Includes disposal of the key if applicable.
+    /// </summary>
+    void RemoveSync(string key);
+
+    /// <summary>
     /// If the instance is an IDisposable, Dispose will be called on the method (and DisposeAsync will not) <para/>
     /// If the instance is ONLY an IAsyncDisposable and this is called, it will block while disposing. You should try to avoid this. <para/>
     /// </summary>
