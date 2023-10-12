@@ -165,10 +165,10 @@ public class SingletonDictionaryTests
         Task<HttpClient> task1 = httpClientSingleton.Get("test", 100).AsTask();
         Task<HttpClient> task2 = httpClientSingleton.Get("test", 200).AsTask();
 
-        await Task.WhenAll(task1, task2);
+        var results = await Task.WhenAll(task1, task2);
 
-        task1.Result.Timeout.TotalSeconds.Should().Be(100);
-        task2.Result.Timeout.TotalSeconds.Should().Be(100);
+        results[0].Timeout.TotalSeconds.Should().Be(100);
+        results[1].Timeout.TotalSeconds.Should().Be(100);
     }
 
     [Fact]
