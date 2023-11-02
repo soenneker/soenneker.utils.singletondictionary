@@ -39,6 +39,6 @@
 
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
         <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
-        <PackageReference Include="Soenneker.Extensions.Enumerable" Version="1.0.41" />
+        <PackageReference Include="Soenneker.Extensions.Enumerable" Version="1.0.42" />
     </ItemGroup>
 </Project>
