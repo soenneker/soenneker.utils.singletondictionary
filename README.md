@@ -1,5 +1,5 @@
 [![](https://img.shields.io/nuget/v/Soenneker.Utils.SingletonDictionary.svg?style=for-the-badge)](https://www.nuget.org/packages/Soenneker.Utils.SingletonDictionary/)
-[![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.utils.singletondictionary/publish.yml?style=for-the-badge)](https://github.com/soenneker/soenneker.utils.singletondictionary/actions/workflows/publish.yml)
+[![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.utils.singletondictionary/publish-package.yml?style=for-the-badge)](https://github.com/soenneker/soenneker.utils.singletondictionary/actions/workflows/publish-package.yml)
 [![](https://img.shields.io/nuget/dt/Soenneker.Utils.SingletonDictionary.svg?style=for-the-badge)](https://www.nuget.org/packages/Soenneker.Utils.SingletonDictionary/)
 
 # ![]() Soenneker.Utils.SingletonDictionary
