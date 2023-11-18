@@ -39,6 +39,6 @@
 
         
         <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
-        <PackageReference Include="Soenneker.Extensions.Enumerable" Version="2.1.8" />
+        <PackageReference Include="Soenneker.Extensions.Enumerable" Version="2.1.9" />
     </ItemGroup>
 </Project>
