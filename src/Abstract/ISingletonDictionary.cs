@@ -33,7 +33,7 @@ public interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
     /// <summary>
     /// Allows for setting the initialization code outside of the constructor
     /// </summary>
-    void SetAsyncInitialization(Func<object[]?, Task<T>> asyncInitializationFunc);
+    void SetAsyncInitialization(Func<object[]?, ValueTask<T>> asyncInitializationFunc);
 
     /// <summary>
     /// Allows for setting the initialization code outside of the constructor

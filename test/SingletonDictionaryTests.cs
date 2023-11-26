@@ -57,7 +57,7 @@ public class SingletonDictionaryTests
         result.Should().NotBeNull();
     }
 
-    private static async Task<HttpClient> AsyncInitializationFunc(object[]? arg)
+    private static async ValueTask<HttpClient> AsyncInitializationFunc(object[]? arg)
     {
         var httpClient = new HttpClient();
 

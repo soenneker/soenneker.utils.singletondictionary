@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Nito.AsyncEx;
+using Soenneker.Extensions.ValueTask;
 using Soenneker.Utils.SingletonDictionary.Abstract;
 
 namespace Soenneker.Utils.SingletonDictionary;
@@ -14,12 +15,12 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
 
     private readonly AsyncLock _lock;
 
-    private Func<object[]?, Task<T>>? _asyncInitializationFunc;
+    private Func<object[]?, ValueTask<T>>? _asyncInitializationFunc;
     private Func<object[]?, T>? _initializationFunc;
 
     private bool _disposed;
 
-    public SingletonDictionary(Func<object[]?, Task<T>> asyncInitializationFunc) : this()
+    public SingletonDictionary(Func<object[]?, ValueTask<T>> asyncInitializationFunc) : this()
     {
         _asyncInitializationFunc = asyncInitializationFunc;
     }
@@ -47,14 +48,14 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (await _lock.LockAsync())
+        using (await _lock.LockAsync().ConfigureAwait(false))
         {
             if (_dictionary.TryGetValue(key, out instance))
                 return instance;
 
             if (_asyncInitializationFunc != null)
             {
-                instance = await _asyncInitializationFunc(objects);
+                instance = await _asyncInitializationFunc(objects).NoSync();
             }
             else if (_initializationFunc != null)
             {
@@ -89,7 +90,8 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
             else if (_asyncInitializationFunc != null)
             {
                 // Not a great situation here - we only have async initialization but we're calling this synchronously... so we'll block
-                instance = _asyncInitializationFunc(objects).GetAwaiter().GetResult();
+
+                return _asyncInitializationFunc(objects).AsTask().GetAwaiter().GetResult();
             }
             else
                 throw new NullReferenceException("Initialization func for AsyncSingleton cannot be null");
@@ -100,7 +102,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         return instance;
     }
 
-    public void SetAsyncInitialization(Func<object[]?, Task<T>> asyncInitializationFunc)
+    public void SetAsyncInitialization(Func<object[]?, ValueTask<T>> asyncInitializationFunc)
     {
         _asyncInitializationFunc = asyncInitializationFunc;
     }
@@ -117,15 +119,15 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
 
         if (_dictionary!.TryGetValue(key, out T? instance))
         {
-            await DisposeInstanceAsync(key, instance).ConfigureAwait(false);
+            await DisposeInstanceAsync(key, instance).NoSync();
             return;
         }
 
-        using (await _lock.LockAsync())
+        using (await _lock.LockAsync().ConfigureAwait(false))
         {
             if (_dictionary.TryGetValue(key, out instance))
             {
-                await DisposeInstanceAsync(key, instance).ConfigureAwait(false);
+                await DisposeInstanceAsync(key, instance).NoSync();
             }
         }
     }
@@ -178,7 +180,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
             case IAsyncDisposable asyncDisposable:
                 // Kind of a weird situation - basically the instance is IAsyncDisposable but it's being disposed synchronously (which can happen).
                 // Hopefully this object is IDisposable because this is not guaranteed to block, but we'll try anyways
-                _ = asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                _ = asyncDisposable.DisposeAsync();
                 break;
         }
 
@@ -200,7 +202,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
 
         foreach (KeyValuePair<string, T> kvp in _dictionary)
         {
-            await DisposeInstanceAsync(kvp.Key, kvp.Value).ConfigureAwait(false);
+            await DisposeInstanceAsync(kvp.Key, kvp.Value).NoSync();
         }
 
         _dictionary = null;
@@ -211,7 +213,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         switch (instance)
         {
             case IAsyncDisposable asyncDisposable:
-                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                await asyncDisposable.DisposeAsync().NoSync();
                 break;
             case IDisposable disposable:
                 disposable.Dispose();
