@@ -8,7 +8,7 @@
 ## Installation
 
 ```
-Install-Package Soenneker.Utils.SingletonDictionary
+dotnet add package Soenneker.Utils.SingletonDictionary
 ```
 
 ## Example
