@@ -2,7 +2,7 @@
 [![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.utils.singletondictionary/publish-package.yml?style=for-the-badge)](https://github.com/soenneker/soenneker.utils.singletondictionary/actions/workflows/publish-package.yml)
 [![](https://img.shields.io/nuget/dt/Soenneker.Utils.SingletonDictionary.svg?style=for-the-badge)](https://www.nuget.org/packages/Soenneker.Utils.SingletonDictionary/)
 
-# ![]() Soenneker.Utils.SingletonDictionary
+# ![](https://user-images.githubusercontent.com/4441470/224455560-91ed3ee7-f510-4041-a8d2-3fc093025112.png) Soenneker.Utils.SingletonDictionary
 ### An externally initializing singleton dictionary that uses double-check asynchronous locking, with optional async and sync disposal
 
 ## Installation
