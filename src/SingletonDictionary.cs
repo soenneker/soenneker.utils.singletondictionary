@@ -117,6 +117,8 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
 
+        // Double lock removal
+
         if (_dictionary!.TryGetValue(key, out T? instance))
         {
             await DisposeInstanceAsync(key, instance).NoSync();
@@ -137,6 +139,8 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
 
+        // Double lock removal
+
         if (_dictionary!.TryGetValue(key, out T? instance))
         {
             DisposeInstance(key, instance);
@@ -154,20 +158,22 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
 
     public void Dispose()
     {
-        _disposed = true;
-
-        GC.SuppressFinalize(this);
-
-        // Don't use .IsNullOrEmpty() due to unique ConcurrentDictionary properties
-        if (_dictionary == null || _dictionary.IsEmpty)
+        if (_disposed)
             return;
 
-        foreach (KeyValuePair<string, T> kvp in _dictionary)
+        _disposed = true;
+
+        // Don't use .IsNullOrEmpty() due to unique ConcurrentDictionary properties
+        if (_dictionary != null && !_dictionary.IsEmpty)
         {
-            DisposeInstance(kvp.Key, kvp.Value);
+            foreach (KeyValuePair<string, T> kvp in _dictionary)
+            {
+                DisposeInstance(kvp.Key, kvp.Value);
+            }
         }
 
         _dictionary = null;
+        GC.SuppressFinalize(this);
     }
 
     private void DisposeInstance(string key, T instance)
@@ -178,34 +184,32 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
                 disposable.Dispose();
                 break;
             case IAsyncDisposable asyncDisposable:
-                // Kind of a weird situation - basically the instance is IAsyncDisposable but it's being disposed synchronously (which can happen).
-                // Hopefully this object is IDisposable because this is not guaranteed to block, but we'll try anyways
-                _ = asyncDisposable.DisposeAsync();
+                // Kind of a weird situation - the instance is IAsyncDisposable but the dictionary is being disposed synchronously (which can happen).
+                asyncDisposable.DisposeAsync().GetAwaiter().GetResult();
                 break;
         }
 
-        if (_dictionary == null || _dictionary.IsEmpty)
-            return;
-
-        _dictionary.TryRemove(key, out _);
+        _dictionary?.TryRemove(key, out _);
     }
 
     public async ValueTask DisposeAsync()
     {
-        _disposed = true;
-
-        GC.SuppressFinalize(this);
-
-        // Don't use .IsNullOrEmpty() due to unique ConcurrentDictionary properties
-        if (_dictionary == null || _dictionary.IsEmpty)
+        if (_disposed)
             return;
 
-        foreach (KeyValuePair<string, T> kvp in _dictionary)
+        _disposed = true;
+
+        // Don't use .IsNullOrEmpty() due to unique ConcurrentDictionary properties
+        if (_dictionary != null && _dictionary.IsEmpty)
         {
-            await DisposeInstanceAsync(kvp.Key, kvp.Value).NoSync();
+            foreach (KeyValuePair<string, T> kvp in _dictionary)
+            {
+                await DisposeInstanceAsync(kvp.Key, kvp.Value).NoSync();
+            }
         }
 
         _dictionary = null;
+        GC.SuppressFinalize(this);
     }
 
     private async ValueTask DisposeInstanceAsync(string key, T instance)
@@ -220,9 +224,6 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
                 break;
         }
 
-        if (_dictionary == null || _dictionary.IsEmpty)
-            return;
-
-        _dictionary.TryRemove(key, out _);
+        _dictionary?.TryRemove(key, out _);
     }
 }
