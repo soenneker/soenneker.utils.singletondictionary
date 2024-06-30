@@ -18,7 +18,7 @@ public interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
     /// <exception cref="ObjectDisposedException"></exception>
     /// <exception cref="NullReferenceException"></exception>
     [Pure]
-    ValueTask<T> Get(string key, params object[]? objects);
+    ValueTask<T> Get(string key, params object[] objects);
 
     /// <summary>
     /// <see cref="Get"/> should be used instead of this if possible. This method can block the calling thread! It's lazy; it's initialized only when retrieving.
@@ -28,17 +28,15 @@ public interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
     /// <exception cref="ObjectDisposedException"></exception>
     /// <exception cref="NullReferenceException"></exception>
     [Pure]
-    T GetSync(string key, params object[]? objects);
+    T GetSync(string key, params object[] objects);
 
-    /// <summary>
-    /// Allows for setting the initialization code outside of the constructor
-    /// </summary>
-    void SetAsyncInitialization(Func<object[]?, ValueTask<T>> asyncInitializationFunc);
+    void SetInitialization(Func<string, object[], ValueTask<T>> asyncKeyInitializationFunc);
 
-    /// <summary>
-    /// Allows for setting the initialization code outside of the constructor
-    /// </summary>
-    void SetInitialization(Func<object[]?, T> initializationFunc);
+    void SetInitialization(Func<string, object[], T> keyInitializationFunc);
+
+    void SetInitialization(Func<object[], ValueTask<T>> asyncInitializationFunc);
+
+    void SetInitialization(Func<object[], T> initializationFunc);
 
     /// <summary>
     /// Includes disposal of the key if applicable. Recommended over <see cref="RemoveSync"/>

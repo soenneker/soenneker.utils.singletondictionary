@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Nito.AsyncEx;
 using Soenneker.Extensions.ValueTask;
 using Soenneker.Utils.SingletonDictionary.Abstract;
+using Soenneker.Utils.SingletonDictionary.Enums;
 
 namespace Soenneker.Utils.SingletonDictionary;
 
@@ -15,24 +16,48 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
 
     private readonly AsyncLock _lock;
 
-    private Func<object[]?, ValueTask<T>>? _asyncInitializationFunc;
-    private Func<object[]?, T>? _initializationFunc;
+    private Func<string, object[], ValueTask<T>>? _asyncKeyInitializationFunc;
+    private Func<string, object[], T>? _keyInitializationFunc;
+    private Func<object[], ValueTask<T>>? _asyncInitializationFunc;
+    private Func<object[], T>? _initializationFunc;
 
     private bool _disposed;
 
-    public SingletonDictionary(Func<object[]?, ValueTask<T>> asyncInitializationFunc) : this()
+    private InitializationType? _initializationType;
+
+    /// <summary>
+    /// If an async initialization func is used, it's recommend that GetSync() NOT be used.
+    /// </summary>
+    public SingletonDictionary(Func<string, object[], ValueTask<T>> asyncInitializationFunc) : this()
     {
+        _initializationType = InitializationType.AsyncKey;
+        _asyncKeyInitializationFunc = asyncInitializationFunc;
+    }
+
+    /// <summary>
+    /// If an async initialization func is used, it's recommend that GetSync() NOT be used.
+    /// </summary>
+    public SingletonDictionary(Func<object[], ValueTask<T>> asyncInitializationFunc) : this()
+    {
+        _initializationType = InitializationType.Async;
         _asyncInitializationFunc = asyncInitializationFunc;
     }
 
-    public SingletonDictionary(Func<object[]?, T> initializationFunc) : this()
+    public SingletonDictionary(Func<string, object[], T> initializationFunc) : this()
     {
+        _initializationType = InitializationType.SyncKey;
+        _keyInitializationFunc = initializationFunc;
+    }
+
+    public SingletonDictionary(Func<object[], T> initializationFunc) : this()
+    {
+        _initializationType = InitializationType.Sync;
         _initializationFunc = initializationFunc;
     }
 
     // ReSharper disable once MemberCanBePrivate.Global
     /// <summary>
-    /// If this is used, be sure to set the initialization func, see <see cref="SetAsyncInitialization"/> or <see cref="SetInitialization"/> or use another constructor.
+    /// If this is used, be sure to set the initialization func, see SetInitialization or use another constructor.
     /// </summary>
     public SingletonDictionary()
     {
@@ -40,7 +65,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         _dictionary = new ConcurrentDictionary<string, T>();
     }
 
-    public async ValueTask<T> Get(string key, params object[]? objects)
+    public async ValueTask<T> Get(string key, params object[] objects)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
@@ -53,24 +78,14 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
             if (_dictionary.TryGetValue(key, out instance))
                 return instance;
 
-            if (_asyncInitializationFunc != null)
-            {
-                instance = await _asyncInitializationFunc(objects).NoSync();
-            }
-            else if (_initializationFunc != null)
-            {
-                instance = _initializationFunc(objects);
-            }
-            else
-                throw new NullReferenceException($"Initialization func for {nameof(SingletonDictionary<T>)} cannot be null");
-
+            instance = await GetInternal(key, objects).NoSync();
             _dictionary.TryAdd(key, instance);
         }
 
         return instance;
     }
 
-    public T GetSync(string key, params object[]? objects)
+    public T GetSync(string key, params object[] objects)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
@@ -83,33 +98,105 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
             if (_dictionary.TryGetValue(key, out instance))
                 return instance;
 
-            if (_initializationFunc != null)
-            {
-                instance = _initializationFunc(objects);
-            }
-            else if (_asyncInitializationFunc != null)
-            {
-                // Not a great situation here - we only have async initialization but we're calling this synchronously... so we'll block
-
-                return _asyncInitializationFunc(objects).AsTask().GetAwaiter().GetResult();
-            }
-            else
-                throw new NullReferenceException("Initialization func for AsyncSingleton cannot be null");
-
+            instance = GetInternalSync(key, objects);
             _dictionary.TryAdd(key, instance);
         }
 
         return instance;
     }
 
-    public void SetAsyncInitialization(Func<object[]?, ValueTask<T>> asyncInitializationFunc)
+    private async ValueTask<T> GetInternal(string key, object[] objects)
     {
+        switch (_initializationType)
+        {
+            case InitializationType.AsyncKey:
+                if (_asyncKeyInitializationFunc == null)
+                    throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
+
+                return await _asyncKeyInitializationFunc(key, objects).NoSync();
+            case InitializationType.Async:
+                if (_asyncInitializationFunc == null)
+                    throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
+
+                return await _asyncInitializationFunc(objects).NoSync();
+            case InitializationType.Sync:
+                if (_initializationFunc == null)
+                    throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
+
+                return _initializationFunc(objects);
+            case InitializationType.SyncKey:
+                if (_keyInitializationFunc == null)
+                    throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
+
+                return _keyInitializationFunc(key, objects);
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    private T GetInternalSync(string key, object[] objects)
+    {
+        switch (_initializationType)
+        {
+            case InitializationType.AsyncKey:
+                if (_asyncKeyInitializationFunc == null)
+                    throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
+
+                return _asyncKeyInitializationFunc(key, objects).NoSync().GetAwaiter().GetResult();
+            case InitializationType.Async:
+                if (_asyncInitializationFunc == null)
+                    throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
+
+                return _asyncInitializationFunc(objects).NoSync().GetAwaiter().GetResult();
+            case InitializationType.SyncKey:
+                if (_keyInitializationFunc == null)
+                    throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
+
+                return _keyInitializationFunc(key, objects);
+            case InitializationType.Sync:
+                if (_initializationFunc == null)
+                    throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
+
+                return _initializationFunc(objects);
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
+
+    public void SetInitialization(Func<string, object[], ValueTask<T>> asyncKeyInitializationFunc)
+    {
+        if (_initializationType != null)
+            throw new Exception("Setting the initialization of an SingletonDictionary after it's already has been set is not allowed");
+
+        _initializationType = InitializationType.AsyncKey;
+        _asyncKeyInitializationFunc = asyncKeyInitializationFunc;
+    }
+
+    public void SetInitialization(Func<object[], ValueTask<T>> asyncInitializationFunc)
+    {
+        if (_initializationType != null)
+            throw new Exception("Setting the initialization of an SingletonDictionary after it's already has been set is not allowed");
+
+        _initializationType = InitializationType.Async;
         _asyncInitializationFunc = asyncInitializationFunc;
     }
 
-    public void SetInitialization(Func<object[]?, T> initializationFunc)
+    public void SetInitialization(Func<object[], T> initializationFunc)
     {
+        if (_initializationType != null)
+            throw new Exception("Setting the initialization of an SingletonDictionary after it's already has been set is not allowed");
+
+        _initializationType = InitializationType.Sync;
         _initializationFunc = initializationFunc;
+    }
+
+    public void SetInitialization(Func<string, object[], T> keyInitializationFunc)
+    {
+        if (_initializationType != null)
+            throw new Exception("Setting the initialization of an SingletonDictionary after it's already has been set is not allowed");
+
+        _initializationType = InitializationType.SyncKey;
+        _keyInitializationFunc = keyInitializationFunc;
     }
 
     public async ValueTask Remove(string key)

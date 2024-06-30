@@ -12,11 +12,11 @@ public class SingletonDictionaryTests
     [Fact]
     public async Task Get_with_inline_func()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(args =>
+        var httpClientSingleton = new SingletonDictionary<HttpClient>((key, objects) =>
         {
             var client = new HttpClient
             {
-                Timeout = TimeSpan.FromSeconds((int) args![0])
+                Timeout = TimeSpan.FromSeconds((int) objects[0])
             };
 
             return client;
@@ -31,6 +31,16 @@ public class SingletonDictionaryTests
     public async Task Get_async_with_async_init_should_return_instance()
     {
         var httpClientSingleton = new SingletonDictionary<HttpClient>(AsyncInitializationFunc);
+
+        HttpClient result = await httpClientSingleton.Get("arst", 100);
+
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Get_async_with_key_with_async_init_should_return_instance()
+    {
+        var httpClientSingleton = new SingletonDictionary<HttpClient>(AsyncKeyInitializationFunc);
 
         HttpClient result = await httpClientSingleton.Get("arst", 100);
 
@@ -55,18 +65,6 @@ public class SingletonDictionaryTests
         HttpClient result = await httpClientSingleton.Get("arst");
 
         result.Should().NotBeNull();
-    }
-
-    private static async ValueTask<HttpClient> AsyncInitializationFunc(object[]? arg)
-    {
-        var httpClient = new HttpClient();
-
-        if (arg.Populated())
-            httpClient.Timeout = TimeSpan.FromSeconds((int) arg[0]);
-
-        await Task.Delay(100);
-
-        return httpClient;
     }
 
     [Fact]
@@ -99,7 +97,7 @@ public class SingletonDictionaryTests
         result.Should().NotBeNull();
     }
 
-    private static HttpClient InitializeFunc(object[]? arg)
+    private static HttpClient InitializeFunc(object[] arg)
     {
         var httpClient = new HttpClient();
 
@@ -233,5 +231,30 @@ public class SingletonDictionaryTests
         result = httpClientSingleton.GetSync("arst", 200);
 
         result.Timeout.TotalSeconds.Should().Be(200);
+    }
+
+
+    private static async ValueTask<HttpClient> AsyncInitializationFunc(object[] arg)
+    {
+        var httpClient = new HttpClient();
+
+        if (arg.Populated())
+            httpClient.Timeout = TimeSpan.FromSeconds((int) arg[0]);
+
+        await Task.Delay(100);
+
+        return httpClient;
+    }
+
+    private static async ValueTask<HttpClient> AsyncKeyInitializationFunc(string key, object[] arg)
+    {
+        var httpClient = new HttpClient();
+
+        if (arg.Populated())
+            httpClient.Timeout = TimeSpan.FromSeconds((int) arg[0]);
+
+        await Task.Delay(100);
+
+        return httpClient;
     }
 }
