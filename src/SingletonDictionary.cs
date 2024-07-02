@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Nito.AsyncEx;
 using Soenneker.Extensions.ValueTask;
@@ -65,7 +66,12 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         _dictionary = new ConcurrentDictionary<string, T>();
     }
 
-    public async ValueTask<T> Get(string key, params object[] objects)
+    public ValueTask<T> Get(string key, params object[] objects)
+    {
+        return Get(key, CancellationToken.None, objects);
+    }
+
+    public async ValueTask<T> Get(string key, CancellationToken cancellationToken, params object[] objects)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
@@ -73,7 +79,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (await _lock.LockAsync().ConfigureAwait(false))
+        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
         {
             if (_dictionary.TryGetValue(key, out instance))
                 return instance;
@@ -87,13 +93,18 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
 
     public T GetSync(string key, params object[] objects)
     {
+        return GetSync(key, CancellationToken.None, objects);
+    }
+
+    public T GetSync(string key, CancellationToken cancellationToken, params object[] objects)
+    {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
 
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (_lock.Lock())
+        using (_lock.Lock(cancellationToken))
         {
             if (_dictionary.TryGetValue(key, out instance))
                 return instance;
@@ -199,7 +210,12 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         _keyInitializationFunc = keyInitializationFunc;
     }
 
-    public async ValueTask Remove(string key)
+    public ValueTask Remove(string key)
+    {
+        return Remove(key, CancellationToken.None);
+    }
+
+    public async ValueTask Remove(string key, CancellationToken cancellationToken)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
@@ -212,7 +228,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
             return;
         }
 
-        using (await _lock.LockAsync().ConfigureAwait(false))
+        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
         {
             if (_dictionary.TryGetValue(key, out instance))
             {
@@ -222,6 +238,11 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
     }
 
     public void RemoveSync(string key)
+    {
+        RemoveSync(key, CancellationToken.None);
+    }
+
+    public void RemoveSync(string key, CancellationToken cancellationToken)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
@@ -234,7 +255,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
             return;
         }
 
-        using (_lock.Lock())
+        using (_lock.Lock(cancellationToken))
         {
             if (_dictionary.TryGetValue(key, out instance))
             {
@@ -272,7 +293,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
                 break;
             case IAsyncDisposable asyncDisposable:
                 // Kind of a weird situation - the instance is IAsyncDisposable but the dictionary is being disposed synchronously (which can happen).
-                asyncDisposable.DisposeAsync().GetAwaiter().GetResult();
+                asyncDisposable.DisposeAsync().NoSync().GetAwaiter().GetResult();
                 break;
         }
 

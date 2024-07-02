@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Soenneker.Utils.SingletonDictionary.Abstract;
@@ -21,7 +22,17 @@ public interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
     ValueTask<T> Get(string key, params object[] objects);
 
     /// <summary>
-    /// <see cref="Get"/> should be used instead of this if possible. This method can block the calling thread! It's lazy; it's initialized only when retrieving.
+    /// Utilizes double-check async locking to guarantee there's only one instance of the object. It's lazy; it's initialized only when retrieving.
+    /// This method should be called even if the initialization func was synchronous.
+    /// </summary>
+    /// <remarks>The initialization func needs to be set before calling this, either in the ctor or via the other methods</remarks>
+    /// <exception cref="ObjectDisposedException"></exception>
+    /// <exception cref="NullReferenceException"></exception>
+    [Pure]
+    ValueTask<T> Get(string key, CancellationToken cancellationToken, params object[] objects);
+
+    /// <summary>
+    /// <see cref="Get(string, object[])"/> should be used instead of this if possible. This method can block the calling thread! It's lazy; it's initialized only when retrieving.
     /// This can still be used with an async initialization func, but it will block on the func.
     /// </summary>
     /// <remarks>The initialization func needs to be set before calling this, either in the ctor or via the other methods</remarks>
@@ -29,6 +40,16 @@ public interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
     /// <exception cref="NullReferenceException"></exception>
     [Pure]
     T GetSync(string key, params object[] objects);
+
+    /// <summary>
+    /// <see cref="Get(string, object[])"/> should be used instead of this if possible. This method can block the calling thread! It's lazy; it's initialized only when retrieving.
+    /// This can still be used with an async initialization func, but it will block on the func.
+    /// </summary>
+    /// <remarks>The initialization func needs to be set before calling this, either in the ctor or via the other methods</remarks>
+    /// <exception cref="ObjectDisposedException"></exception>
+    /// <exception cref="NullReferenceException"></exception>
+    [Pure]
+    T GetSync(string key, CancellationToken cancellationToken, params object[] objects);
 
     void SetInitialization(Func<string, object[], ValueTask<T>> asyncKeyInitializationFunc);
 
@@ -39,14 +60,24 @@ public interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
     void SetInitialization(Func<object[], T> initializationFunc);
 
     /// <summary>
-    /// Includes disposal of the key if applicable. Recommended over <see cref="RemoveSync"/>
+    /// Includes disposal of the key if applicable. Recommended over <see cref="RemoveSync(string)"/>
     /// </summary>
     ValueTask Remove(string key);
 
     /// <summary>
-    /// Includes disposal of the key if applicable.
+    /// Includes disposal of the key if applicable. Recommended over <see cref="RemoveSync(string)"/>
+    /// </summary>
+    ValueTask Remove(string key, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Includes disposal of the key if applicable. Async removal <see cref="Remove(string)"/> is recommended instead of this.
     /// </summary>
     void RemoveSync(string key);
+
+    /// <summary>
+    /// Includes disposal of the key if applicable. Async removal <see cref="Remove(string)"/> is recommended instead of this.
+    /// </summary>
+    void RemoveSync(string key, CancellationToken cancellationToken);
 
     /// <summary>
     /// If the instance is an IDisposable, Dispose will be called on the method (and DisposeAsync will not) <para/>
