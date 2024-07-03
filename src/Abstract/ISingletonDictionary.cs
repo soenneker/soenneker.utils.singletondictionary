@@ -51,13 +51,17 @@ public interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
     [Pure]
     T GetSync(string key, CancellationToken cancellationToken, params object[] objects);
 
-    void SetInitialization(Func<string, object[], ValueTask<T>> asyncKeyInitializationFunc);
+    void SetInitialization(Func<string, object[], ValueTask<T>> func);
 
-    void SetInitialization(Func<string, object[], T> keyInitializationFunc);
+    void SetInitialization(Func<string, CancellationToken, object[], ValueTask<T>> func);
 
-    void SetInitialization(Func<object[], ValueTask<T>> asyncInitializationFunc);
+    void SetInitialization(Func<string, object[], T> func);
 
-    void SetInitialization(Func<object[], T> initializationFunc);
+    void SetInitialization(Func<string, CancellationToken, object[], T> func);
+
+    void SetInitialization(Func<object[], ValueTask<T>> func);
+
+    void SetInitialization(Func<object[], T> func);
 
     /// <summary>
     /// Includes disposal of the key if applicable. Recommended over <see cref="RemoveSync(string)"/>

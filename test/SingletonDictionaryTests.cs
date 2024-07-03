@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Soenneker.Extensions.Enumerable;
@@ -181,6 +182,20 @@ public class SingletonDictionaryTests
         Func<Task> act = async () => _ = await httpClientSingleton.Get("test");
 
         await act.Should().ThrowAsync<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public async Task Get_with_token_should_be_token_given()
+    {
+        var cancellationToken = new CancellationToken();
+
+        var httpClientSingleton = new SingletonDictionary<HttpClient>(async (key, token, obj) =>
+        {
+            token.Should().Be(cancellationToken);
+            return new HttpClient();
+        });
+
+        _ = await httpClientSingleton.Get("test", cancellationToken);
     }
 
     [Fact]

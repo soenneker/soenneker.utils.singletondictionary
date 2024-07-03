@@ -3,7 +3,9 @@
 public enum InitializationType
 {
     AsyncKey,
+    AsyncKeyToken,
     Async,
     Sync,
-    SyncKey
+    SyncKey,
+    SyncKeyToken
 }
