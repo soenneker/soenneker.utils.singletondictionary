@@ -357,7 +357,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         _disposed = true;
 
         // Don't use .IsNullOrEmpty() due to unique ConcurrentDictionary properties
-        if (_dictionary is not null && _dictionary.IsEmpty)
+        if (_dictionary is not null && !_dictionary.IsEmpty)
         {
             foreach (KeyValuePair<string, T> kvp in _dictionary)
             {
