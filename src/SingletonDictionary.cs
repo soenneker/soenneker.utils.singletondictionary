@@ -174,17 +174,17 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
                 if (_asyncKeyFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
-                return _asyncKeyFunc(key, objects).NoSync().GetAwaiter().GetResult();
+                return _asyncKeyFunc(key, objects).AwaitSync();
             case InitializationType.AsyncKeyToken:
                 if (_asyncKeyTokenFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
-                return _asyncKeyTokenFunc(key, CancellationToken.None, objects).NoSync().GetAwaiter().GetResult();
+                return _asyncKeyTokenFunc(key, CancellationToken.None, objects).AwaitSync();
             case InitializationType.Async:
                 if (_asyncFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
-                return _asyncFunc(objects).NoSync().GetAwaiter().GetResult();
+                return _asyncFunc(objects).AwaitSync();
             case InitializationType.SyncKey:
                 if (_keyFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
@@ -342,7 +342,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
                 break;
             case IAsyncDisposable asyncDisposable:
                 // Kind of a weird situation - the instance is IAsyncDisposable but the dictionary is being disposed synchronously (which can happen).
-                asyncDisposable.DisposeAsync().NoSync().GetAwaiter().GetResult();
+                asyncDisposable.DisposeAsync().AwaitSync();
                 break;
         }
 
