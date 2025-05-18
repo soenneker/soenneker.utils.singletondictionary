@@ -89,7 +89,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 
     public async ValueTask<T> Get(string key, CancellationToken cancellationToken, params object[] objects)
     {
-        ObjectDisposedException.ThrowIf(true, _disposed);
+        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
 
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
@@ -108,7 +108,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 
     public T GetSync(string key, params object[] objects)
     {
-        ObjectDisposedException.ThrowIf(true, _disposed);
+        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
 
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
@@ -259,7 +259,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 
     public async ValueTask Remove(string key, CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(true, _disposed);
+        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
 
         // Double lock removal
 
@@ -280,7 +280,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 
     public void RemoveSync(string key, CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(true, _disposed);
+        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
 
         // Double lock removal
 
