@@ -11,7 +11,7 @@ using Soenneker.Utils.SingletonDictionary.Enums;
 namespace Soenneker.Utils.SingletonDictionary;
 
 ///<inheritdoc cref="ISingletonDictionary{T}"/>
-public class SingletonDictionary<T> : ISingletonDictionary<T>
+public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 {
     private ConcurrentDictionary<string, T>? _dictionary;
 
@@ -259,12 +259,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         _keyTokenFunc = func;
     }
 
-    public ValueTask Remove(string key)
-    {
-        return Remove(key, CancellationToken.None);
-    }
-
-    public async ValueTask Remove(string key, CancellationToken cancellationToken)
+    public async ValueTask Remove(string key, CancellationToken cancellationToken = default)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
@@ -273,7 +268,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
 
         if (_dictionary!.TryGetValue(key, out T? instance))
         {
-            await DisposeInstanceAsync(key, instance).NoSync();
+            await DisposeInstance(key, instance).NoSync();
             return;
         }
 
@@ -281,17 +276,12 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         {
             if (_dictionary.TryGetValue(key, out instance))
             {
-                await DisposeInstanceAsync(key, instance).NoSync();
+                await DisposeInstance(key, instance).NoSync();
             }
         }
     }
 
-    public void RemoveSync(string key)
-    {
-        RemoveSync(key, CancellationToken.None);
-    }
-
-    public void RemoveSync(string key, CancellationToken cancellationToken)
+    public void RemoveSync(string key, CancellationToken cancellationToken = default)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
@@ -300,7 +290,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
 
         if (_dictionary!.TryGetValue(key, out T? instance))
         {
-            DisposeInstance(key, instance);
+            DisposeInstanceSync(key, instance);
             return;
         }
 
@@ -308,32 +298,12 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         {
             if (_dictionary.TryGetValue(key, out instance))
             {
-                DisposeInstance(key, instance);
+                DisposeInstanceSync(key, instance);
             }
         }
     }
 
-    public void Dispose()
-    {
-        if (_disposed)
-            return;
-
-        _disposed = true;
-
-        // Don't use .IsNullOrEmpty() due to unique ConcurrentDictionary properties
-        if (_dictionary is not null && !_dictionary.IsEmpty)
-        {
-            foreach (KeyValuePair<string, T> kvp in _dictionary)
-            {
-                DisposeInstance(kvp.Key, kvp.Value);
-            }
-        }
-
-        _dictionary = null;
-        GC.SuppressFinalize(this);
-    }
-
-    private void DisposeInstance(string key, T instance)
+    private void DisposeInstanceSync(string key, T instance)
     {
         switch (instance)
         {
@@ -349,27 +319,7 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         _dictionary?.TryRemove(key, out _);
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        if (_disposed)
-            return;
-
-        _disposed = true;
-
-        // Don't use .IsNullOrEmpty() due to unique ConcurrentDictionary properties
-        if (_dictionary is not null && !_dictionary.IsEmpty)
-        {
-            foreach (KeyValuePair<string, T> kvp in _dictionary)
-            {
-                await DisposeInstanceAsync(kvp.Key, kvp.Value).NoSync();
-            }
-        }
-
-        _dictionary = null;
-        GC.SuppressFinalize(this);
-    }
-
-    private async ValueTask DisposeInstanceAsync(string key, T instance)
+    private async ValueTask DisposeInstance(string key, T instance)
     {
         switch (instance)
         {
@@ -382,5 +332,45 @@ public class SingletonDictionary<T> : ISingletonDictionary<T>
         }
 
         _dictionary?.TryRemove(key, out _);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
+        // Don't use .IsNullOrEmpty() due to unique ConcurrentDictionary properties
+        if (_dictionary is not null && !_dictionary.IsEmpty)
+        {
+            foreach (KeyValuePair<string, T> kvp in _dictionary)
+            {
+                DisposeInstanceSync(kvp.Key, kvp.Value);
+            }
+        }
+
+        _dictionary = null;
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+
+        // Don't use .IsNullOrEmpty() due to unique ConcurrentDictionary properties
+        if (_dictionary is not null && !_dictionary.IsEmpty)
+        {
+            foreach (KeyValuePair<string, T> kvp in _dictionary)
+            {
+                await DisposeInstance(kvp.Key, kvp.Value).NoSync();
+            }
+        }
+
+        _dictionary = null;
+        GC.SuppressFinalize(this);
     }
 }

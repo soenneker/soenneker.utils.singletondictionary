@@ -9,7 +9,7 @@ namespace Soenneker.Utils.SingletonDictionary.Abstract;
 /// An externally initializing singleton dictionary that uses double-check asynchronous locking, with optional async and sync disposal
 /// </summary>
 /// <remarks>Be sure to dispose of this gracefully if using a Disposable type</remarks>
-public interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
+public partial interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
 {
     /// <summary>
     /// Utilizes double-check async locking to guarantee there's only one instance of the object. It's lazy; it's initialized only when retrieving.
@@ -54,24 +54,14 @@ public interface ISingletonDictionary<T> : IDisposable, IAsyncDisposable
     void SetInitialization(Func<object[], T> func);
 
     /// <summary>
-    /// Includes disposal of the key if applicable. Recommended over <see cref="RemoveSync(string)"/>
+    /// Includes disposal of the key if applicable. Recommended over <see cref="RemoveSync(string,CancellationToken)"/>
     /// </summary>
-    ValueTask Remove(string key);
+    ValueTask Remove(string key, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Includes disposal of the key if applicable. Recommended over <see cref="RemoveSync(string)"/>
+    /// Includes disposal of the key if applicable. Async removal <see cref="Remove(string,CancellationToken)"/> is recommended instead of this.
     /// </summary>
-    ValueTask Remove(string key, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Includes disposal of the key if applicable. Async removal <see cref="Remove(string)"/> is recommended instead of this.
-    /// </summary>
-    void RemoveSync(string key);
-
-    /// <summary>
-    /// Includes disposal of the key if applicable. Async removal <see cref="Remove(string)"/> is recommended instead of this.
-    /// </summary>
-    void RemoveSync(string key, CancellationToken cancellationToken);
+    void RemoveSync(string key, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// If the instance is an IDisposable, Dispose will be called on the method (and DisposeAsync will not) <para/>
