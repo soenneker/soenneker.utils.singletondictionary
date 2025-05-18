@@ -89,8 +89,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 
     public async ValueTask<T> Get(string key, CancellationToken cancellationToken, params object[] objects)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
@@ -109,8 +108,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 
     public T GetSync(string key, params object[] objects)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
@@ -131,32 +129,32 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
     {
         switch (_initializationType)
         {
-            case InitializationType.AsyncKey:
+            case nameof(InitializationType.AsyncKey):
                 if (_asyncKeyFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
                 return await _asyncKeyFunc(key, objects).NoSync();
-            case InitializationType.AsyncKeyToken:
+            case nameof(InitializationType.AsyncKeyToken):
                 if (_asyncKeyTokenFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
                 return await _asyncKeyTokenFunc(key, cancellationToken, objects).NoSync();
-            case InitializationType.Async:
+            case nameof(InitializationType.Async):
                 if (_asyncFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
                 return await _asyncFunc(objects).NoSync();
-            case InitializationType.Sync:
+            case nameof(InitializationType.Sync):
                 if (_func is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
                 return _func(objects);
-            case InitializationType.SyncKeyToken:
+            case nameof(InitializationType.SyncKeyToken):
                 if (_keyTokenFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
                 return _keyTokenFunc(key, cancellationToken, objects);
-            case InitializationType.SyncKey:
+            case nameof(InitializationType.SyncKey):
                 if (_keyFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
@@ -170,32 +168,32 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
     {
         switch (_initializationType)
         {
-            case InitializationType.AsyncKey:
+            case nameof(InitializationType.AsyncKey):
                 if (_asyncKeyFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
                 return _asyncKeyFunc(key, objects).AwaitSync();
-            case InitializationType.AsyncKeyToken:
+            case nameof(InitializationType.AsyncKeyToken):
                 if (_asyncKeyTokenFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
                 return _asyncKeyTokenFunc(key, CancellationToken.None, objects).AwaitSync();
-            case InitializationType.Async:
+            case nameof(InitializationType.Async):
                 if (_asyncFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
                 return _asyncFunc(objects).AwaitSync();
-            case InitializationType.SyncKey:
+            case nameof(InitializationType.SyncKey):
                 if (_keyFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
                 return _keyFunc(key, objects);
-            case InitializationType.SyncKeyToken:
+            case nameof(InitializationType.SyncKeyToken):
                 if (_keyTokenFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
                 return _keyTokenFunc(key, CancellationToken.None, objects);
-            case InitializationType.Sync:
+            case nameof(InitializationType.Sync):
                 if (_func is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
@@ -261,8 +259,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 
     public async ValueTask Remove(string key, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         // Double lock removal
 
@@ -283,8 +280,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 
     public void RemoveSync(string key, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         // Double lock removal
 

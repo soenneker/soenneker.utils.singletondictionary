@@ -10,8 +10,7 @@ public sealed partial class SingletonDictionary<T>
 {
     public void ClearSync()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         using (_lock.Lock())
         {
@@ -27,8 +26,7 @@ public sealed partial class SingletonDictionary<T>
 
     public async ValueTask Clear(CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
         {

@@ -9,8 +9,7 @@ public sealed partial class SingletonDictionary<T>
 {
     public async ValueTask<Dictionary<string, T>> GetAll(CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -20,8 +19,7 @@ public sealed partial class SingletonDictionary<T>
 
     public async ValueTask<List<string>> GetKeys(CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -31,8 +29,7 @@ public sealed partial class SingletonDictionary<T>
 
     public async ValueTask<List<T>> GetValues(CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -42,8 +39,7 @@ public sealed partial class SingletonDictionary<T>
 
     public Dictionary<string, T> GetAllSync()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         using (_lock.Lock())
         {
@@ -53,8 +49,7 @@ public sealed partial class SingletonDictionary<T>
 
     public List<string> GetKeysSync()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         using (_lock.Lock())
         {
@@ -64,8 +59,7 @@ public sealed partial class SingletonDictionary<T>
 
     public List<T> GetValuesSync()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+        ObjectDisposedException.ThrowIf(true, _disposed);
 
         using (_lock.Lock())
         {
