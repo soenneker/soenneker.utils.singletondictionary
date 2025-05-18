@@ -8,32 +8,47 @@ namespace Soenneker.Utils.SingletonDictionary.Abstract;
 public partial interface ISingletonDictionary<T>
 {
     /// <summary>
-    /// Asynchronously retrieves all stored instances of <typeparamref name="T"/>.
+    /// Retrieves all key-value pairs currently in the dictionary.
     /// </summary>
-    /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
-    /// <returns>A list of all stored instances of <typeparamref name="T"/>. Returns an empty list if none exist.</returns>
+    /// <returns>A new dictionary containing all keys and instances.</returns>
     [Pure]
-    ValueTask<List<T>> GetAll(CancellationToken cancellationToken = default);
+    Dictionary<string, T> GetAllSync();
 
     /// <summary>
-    /// Asynchronously retrieves all stored instances of <typeparamref name="T"/> with their associated keys.
+    /// Asynchronously retrieves all key-value pairs currently in the dictionary.
     /// </summary>
-    /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
-    /// <returns>A dictionary containing all keys and instances of <typeparamref name="T"/>. Returns an empty dictionary if none exist.</returns>
+    /// <param name="cancellationToken">An optional token to cancel the operation.</param>
+    /// <returns>A new dictionary containing all keys and instances.</returns>
     [Pure]
-    ValueTask<Dictionary<string, T>> GetAllWithKeys(CancellationToken cancellationToken = default);
+    ValueTask<Dictionary<string, T>> GetAll(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Synchronously retrieves all stored instances of <typeparamref name="T"/>.
+    /// Retrieves all keys currently in the dictionary.
     /// </summary>
-    /// <returns>A list of all stored instances of <typeparamref name="T"/>. Returns an empty list if none exist.</returns>
+    /// <returns>A list of all keys.</returns>
     [Pure]
-    List<T> GetAllSync();
+    List<string> GetKeysSync();
 
     /// <summary>
-    /// Synchronously retrieves all stored instances of <typeparamref name="T"/> with their associated keys.
+    /// Asynchronously retrieves all keys currently in the dictionary.
     /// </summary>
-    /// <returns>A dictionary containing all keys and instances of <typeparamref name="T"/>. Returns an empty dictionary if none exist.</returns>
+    /// <param name="cancellationToken">An optional token to cancel the operation.</param>
+    /// <returns>A list of all keys.</returns>
     [Pure]
-    Dictionary<string, T> GetAllWithKeysSync();
+    ValueTask<List<string>> GetKeys(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves all values currently in the dictionary.
+    /// </summary>
+    /// <returns>A list of all instances.</returns>
+    [Pure]
+    List<T> GetValuesSync();
+
+    /// <summary>
+    /// Asynchronously retrieves all values currently in the dictionary.
+    /// </summary>
+    /// <param name="cancellationToken">An optional token to cancel the operation.</param>
+    /// <returns>A list of all instances.</returns>
+    [Pure]
+    ValueTask<List<T>> GetValues(CancellationToken cancellationToken = default);
 }

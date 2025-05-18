@@ -7,18 +7,7 @@ namespace Soenneker.Utils.SingletonDictionary;
 
 public sealed partial class SingletonDictionary<T>
 {
-    public async ValueTask<List<T>> GetAll(CancellationToken cancellationToken = default)
-    {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
-
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
-        {
-            return _dictionary?.Values is { } values ? [..values] : [];
-        }
-    }
-
-    public async ValueTask<Dictionary<string, T>> GetAllWithKeys(CancellationToken cancellationToken = default)
+    public async ValueTask<Dictionary<string, T>> GetAll(CancellationToken cancellationToken = default)
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
@@ -29,7 +18,51 @@ public sealed partial class SingletonDictionary<T>
         }
     }
 
-    public List<T> GetAllSync()
+    public async ValueTask<List<string>> GetKeys(CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+
+        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return _dictionary?.Keys is { } keys ? [.. keys] : [];
+        }
+    }
+
+    public async ValueTask<List<T>> GetValues(CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+
+        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return _dictionary?.Values is { } values ? [.. values] : [];
+        }
+    }
+
+    public Dictionary<string, T> GetAllSync()
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+
+        using (_lock.Lock())
+        {
+            return _dictionary is null ? new Dictionary<string, T>() : new Dictionary<string, T>(_dictionary);
+        }
+    }
+
+    public List<string> GetKeysSync()
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
+
+        using (_lock.Lock())
+        {
+            return _dictionary?.Keys is { } keys ? [.. keys] : [];
+        }
+    }
+
+    public List<T> GetValuesSync()
     {
         if (_disposed)
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
@@ -37,17 +70,6 @@ public sealed partial class SingletonDictionary<T>
         using (_lock.Lock())
         {
             return _dictionary?.Values is { } values ? [.. values] : [];
-        }
-    }
-
-    public Dictionary<string, T> GetAllWithKeysSync()
-    {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
-
-        using (_lock.Lock())
-        {
-            return _dictionary is null ? new Dictionary<string, T>() : new Dictionary<string, T>(_dictionary);
         }
     }
 }
