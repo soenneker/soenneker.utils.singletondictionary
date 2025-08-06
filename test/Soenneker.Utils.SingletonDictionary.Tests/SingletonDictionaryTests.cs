@@ -4,11 +4,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Soenneker.Extensions.Enumerable;
+using Soenneker.Tests.Unit;
 using Xunit;
 
 namespace Soenneker.Utils.SingletonDictionary.Tests;
 
-public class SingletonDictionaryTests
+public class SingletonDictionaryTests : UnitTest
 {
     [Fact]
     public async Task Get_with_inline_func()
@@ -164,7 +165,7 @@ public class SingletonDictionaryTests
         Task<HttpClient> task1 = httpClientSingleton.Get("test", 100).AsTask();
         Task<HttpClient> task2 = httpClientSingleton.Get("test", 200).AsTask();
 
-        var results = await Task.WhenAll(task1, task2);
+        HttpClient[] results = await Task.WhenAll(task1, task2);
 
         results[0].Timeout.TotalSeconds.Should().Be(100);
         results[1].Timeout.TotalSeconds.Should().Be(100);
@@ -241,7 +242,7 @@ public class SingletonDictionaryTests
 
         HttpClient result = httpClientSingleton.GetSync("arst", 100);
 
-        httpClientSingleton.RemoveSync("arst");
+        httpClientSingleton.RemoveSync("arst", CancellationToken);
 
         result = httpClientSingleton.GetSync("arst", 200);
 

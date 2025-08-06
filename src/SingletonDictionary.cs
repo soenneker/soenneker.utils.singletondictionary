@@ -347,7 +347,6 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
         }
 
         _dictionary = null;
-        GC.SuppressFinalize(this);
     }
 
     public async ValueTask DisposeAsync()
@@ -367,6 +366,5 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
         }
 
         _dictionary = null;
-        GC.SuppressFinalize(this);
     }
 }
