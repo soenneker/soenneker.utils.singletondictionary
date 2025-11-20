@@ -42,6 +42,6 @@
         <PackageReference Include="Intellenum" Version="2.0.1" />
         <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
         <PackageReference Include="Soenneker.Extensions.Enumerable" Version="4.0.573" />
-        <PackageReference Include="Soenneker.Extensions.ValueTask" Version="4.0.96" />
+        <PackageReference Include="Soenneker.Extensions.ValueTask" Version="4.0.97" />
     </ItemGroup>
 </Project>
