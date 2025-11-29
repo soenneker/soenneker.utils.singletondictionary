@@ -19,7 +19,7 @@
         </PackageReference>
         <PackageReference Include="Soenneker.Tests.Unit" Version="4.0.963" />
         <PackageReference Include="xUnit.v3" Version="3.2.1" />
-        <PackageReference Include="Soenneker.Tests.Benchmark" Version="4.0.57" />
+        <PackageReference Include="Soenneker.Tests.Benchmark" Version="4.0.58" />
     </ItemGroup>
 
 
