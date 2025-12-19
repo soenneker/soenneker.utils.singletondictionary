@@ -9,60 +9,75 @@ public sealed partial class SingletonDictionary<T>
 {
     public async ValueTask<Dictionary<string, T>> GetAll(CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
+        ThrowIfDisposed();
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.LockAsync(cancellationToken)
+                          .ConfigureAwait(false))
         {
+            ThrowIfDisposed();
+
             return _dictionary is null ? new Dictionary<string, T>() : new Dictionary<string, T>(_dictionary);
         }
     }
 
     public async ValueTask<List<string>> GetKeys(CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
+        ThrowIfDisposed();
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.LockAsync(cancellationToken)
+                          .ConfigureAwait(false))
         {
+            ThrowIfDisposed();
+
             return _dictionary?.Keys is { } keys ? [.. keys] : [];
         }
     }
 
     public async ValueTask<List<T>> GetValues(CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
+        ThrowIfDisposed();
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.LockAsync(cancellationToken)
+                          .ConfigureAwait(false))
         {
+            ThrowIfDisposed();
+
             return _dictionary?.Values is { } values ? [.. values] : [];
         }
     }
 
     public Dictionary<string, T> GetAllSync()
     {
-        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
+        ThrowIfDisposed();
 
         using (_lock.Lock())
         {
+            ThrowIfDisposed();
+
             return _dictionary is null ? new Dictionary<string, T>() : new Dictionary<string, T>(_dictionary);
         }
     }
 
     public List<string> GetKeysSync()
     {
-        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
+        ThrowIfDisposed();
 
         using (_lock.Lock())
         {
+            ThrowIfDisposed();
+
             return _dictionary?.Keys is { } keys ? [.. keys] : [];
         }
     }
 
     public List<T> GetValuesSync()
     {
-        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
+        ThrowIfDisposed();
 
         using (_lock.Lock())
         {
+            ThrowIfDisposed();
+
             return _dictionary?.Values is { } values ? [.. values] : [];
         }
     }

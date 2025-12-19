@@ -10,32 +10,38 @@ public sealed partial class SingletonDictionary<T>
 {
     public void ClearSync()
     {
-        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
+        ThrowIfDisposed();
 
         using (_lock.Lock())
         {
+            ThrowIfDisposed();
+
             if (_dictionary is null || _dictionary.IsEmpty)
                 return;
 
             foreach (KeyValuePair<string, T> kvp in _dictionary)
             {
-                DisposeInstanceSync(kvp.Key, kvp.Value);
+                if (_dictionary.TryRemove(kvp.Key, out T? instance))
+                    DisposeRemovedInstanceSync(instance);
             }
         }
     }
 
     public async ValueTask Clear(CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionary<T>));
+        ThrowIfDisposed();
 
         using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
         {
+            ThrowIfDisposed();
+
             if (_dictionary is null || _dictionary.IsEmpty)
                 return;
 
             foreach (KeyValuePair<string, T> kvp in _dictionary)
             {
-                await DisposeInstance(kvp.Key, kvp.Value).NoSync();
+                if (_dictionary.TryRemove(kvp.Key, out T? instance))
+                    await DisposeRemovedInstance(instance).NoSync();
             }
         }
     }
