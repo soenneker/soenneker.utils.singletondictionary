@@ -75,6 +75,21 @@ public sealed partial class SingletonDictionary<T, T1> : ISingletonDictionary<T,
     public ValueTask<T> Get(string key, T1 arg, CancellationToken cancellationToken = default)
         => GetCore(key, arg, cancellationToken);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGet(string key, out T? value)
+    {
+        ThrowIfDisposed();
+
+        ConcurrentDictionary<string, T>? dict = _dictionary;
+        if (dict is null)
+        {
+            value = default;
+            return false;
+        }
+
+        return dict.TryGetValue(key, out value);
+    }
+
     public async ValueTask<T> GetCore(string key, T1 arg, CancellationToken cancellationToken)
     {
         ThrowIfDisposed();

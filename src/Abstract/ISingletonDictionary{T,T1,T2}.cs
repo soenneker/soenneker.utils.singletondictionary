@@ -21,6 +21,8 @@ public partial interface ISingletonDictionary<T, T1, T2> : IDisposable, IAsyncDi
     [Pure]
     ValueTask<T> Get(string key, T1 arg1, T2 arg2, CancellationToken cancellationToken = default);
 
+    bool TryGet(string key, out T? value);
+
     /// <summary>
     /// <see cref="Get(string, T1, T2, CancellationToken)"/> should be used instead of this if possible. This method can block the calling thread! It's lazy; it's initialized only when retrieving.
     /// This can still be used with an async initialization func, but it will block on the func.
