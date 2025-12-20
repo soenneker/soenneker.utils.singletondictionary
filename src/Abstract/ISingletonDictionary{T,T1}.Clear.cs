@@ -1,9 +1,9 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Soenneker.Utils.SingletonDictionary.Abstract;
 
-public partial interface ISingletonDictionary<T>
+public partial interface ISingletonDictionary<T, T1>
 {
     /// <summary>
     /// Clears all values from the dictionary and disposes them if disposable (sync).
@@ -15,3 +15,4 @@ public partial interface ISingletonDictionary<T>
     /// </summary>
     ValueTask Clear(CancellationToken cancellationToken = default);
 }
+

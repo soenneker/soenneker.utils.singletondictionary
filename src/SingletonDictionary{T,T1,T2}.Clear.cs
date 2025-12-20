@@ -1,12 +1,11 @@
-﻿using Soenneker.Extensions.ValueTask;
-using System;
+using Soenneker.Extensions.ValueTask;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Soenneker.Utils.SingletonDictionary;
 
-public sealed partial class SingletonDictionary<T>
+public sealed partial class SingletonDictionary<T, T1, T2>
 {
     public void ClearSync()
     {
@@ -46,3 +45,4 @@ public sealed partial class SingletonDictionary<T>
         }
     }
 }
+

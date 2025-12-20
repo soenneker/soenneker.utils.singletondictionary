@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Jobs;
+using Soenneker.Utils.SingletonDictionary;
 using Soenneker.Utils.SingletonDictionary.Tests.Iterations;
 using Soenneker.Utils.SingletonDictionary.Abstract;
 using System.Threading;
@@ -18,7 +19,7 @@ public class Benchmark
     [Params(1, 4, 8, 16)] public int ConcurrencyLevel;
     [Params(100, 1_000, 10_000)] public int OperationsPerThread;
 
-    private SingletonDictionary<TestObject> _taskBasedDictionary = null!;
+    private SingletonDictionary<TestObject, object> _taskBasedDictionary = null!;
     private SingletonDictionaryLock<TestObject> _lockBasedDictionary = null!;
     
     // Test object to cache
@@ -33,7 +34,7 @@ public class Benchmark
     public void Setup()
     {
         // Setup Task-based SingletonDictionary
-        _taskBasedDictionary = new SingletonDictionary<TestObject>((key, cancellationToken, args) =>
+        _taskBasedDictionary = new SingletonDictionary<TestObject, object>((key, cancellationToken, arg) =>
         {
             // Simulate some work
             Thread.Sleep(1); // Small delay to simulate factory work
@@ -102,7 +103,7 @@ public class Benchmark
         RunSyncTest(_lockBasedDictionary);
     }
 
-    private async Task RunConcurrentTest(ISingletonDictionary<TestObject> dictionary)
+    private async Task RunConcurrentTest(SingletonDictionaryLock<TestObject> dictionary)
     {
         var tasks = new Task[ConcurrencyLevel];
         
@@ -123,7 +124,28 @@ public class Benchmark
         await Task.WhenAll(tasks);
     }
 
-    private async Task RunMixedAccessTest(ISingletonDictionary<TestObject> dictionary)
+    private async Task RunConcurrentTest(SingletonDictionary<TestObject, object> dictionary)
+    {
+        var tasks = new Task[ConcurrencyLevel];
+        
+        for (int i = 0; i < ConcurrencyLevel; i++)
+        {
+            int threadId = i;
+            tasks[i] = Task.Run(async () =>
+            {
+                for (int j = 0; j < OperationsPerThread; j++)
+                {
+                    // Create keys that will cause some contention but not complete overlap
+                    string key = $"key_{threadId}_{j % 10}";
+                    await dictionary.Get(key, null);
+                }
+            });
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task RunMixedAccessTest(SingletonDictionaryLock<TestObject> dictionary)
     {
         var tasks = new Task[ConcurrencyLevel];
         
@@ -144,7 +166,28 @@ public class Benchmark
         await Task.WhenAll(tasks);
     }
 
-    private void RunSyncTest(ISingletonDictionary<TestObject> dictionary)
+    private async Task RunMixedAccessTest(SingletonDictionary<TestObject, object> dictionary)
+    {
+        var tasks = new Task[ConcurrencyLevel];
+        
+        for (int i = 0; i < ConcurrencyLevel; i++)
+        {
+            int threadId = i;
+            tasks[i] = Task.Run(async () =>
+            {
+                for (int j = 0; j < OperationsPerThread; j++)
+                {
+                    // Mix of unique keys (cache misses) and repeated keys (cache hits)
+                    string key = j % 3 == 0 ? $"unique_{threadId}_{j}" : $"shared_{j % 5}";
+                    await dictionary.Get(key, null);
+                }
+            });
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    private void RunSyncTest(SingletonDictionaryLock<TestObject> dictionary)
     {
         var tasks = new Task[ConcurrencyLevel];
         
@@ -158,6 +201,27 @@ public class Benchmark
                     // Test synchronous access
                     string key = $"sync_key_{threadId}_{j % 5}";
                     dictionary.GetSync(key);
+                }
+            });
+        }
+
+        Task.WaitAll(tasks);
+    }
+
+    private void RunSyncTest(SingletonDictionary<TestObject, object> dictionary)
+    {
+        var tasks = new Task[ConcurrencyLevel];
+        
+        for (int i = 0; i < ConcurrencyLevel; i++)
+        {
+            int threadId = i;
+            tasks[i] = Task.Run(() =>
+            {
+                for (int j = 0; j < OperationsPerThread; j++)
+                {
+                    // Test synchronous access
+                    string key = $"sync_key_{threadId}_{j % 5}";
+                    dictionary.GetSync(key, null);
                 }
             });
         }

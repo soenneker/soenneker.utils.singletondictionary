@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Soenneker.Utils.SingletonDictionary.Abstract;
 
-public partial interface ISingletonDictionary<T>
+public partial interface ISingletonDictionary<T, T1, T2>
 {
     /// <summary>
     /// Retrieves all key-value pairs currently in the dictionary.
@@ -52,3 +52,4 @@ public partial interface ISingletonDictionary<T>
     [Pure]
     ValueTask<List<T>> GetValues(CancellationToken cancellationToken = default);
 }
+

@@ -3,7 +3,6 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using AwesomeAssertions;
-using Soenneker.Extensions.Enumerable;
 using Soenneker.Tests.Unit;
 using Xunit;
 
@@ -14,11 +13,11 @@ public class SingletonDictionaryTests : UnitTest
     [Fact]
     public async Task Get_with_inline_func()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>((key, objects) =>
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>((key, timeout) =>
         {
             var client = new HttpClient
             {
-                Timeout = TimeSpan.FromSeconds((int) objects[0])
+                Timeout = TimeSpan.FromSeconds(timeout)
             };
 
             return client;
@@ -32,7 +31,7 @@ public class SingletonDictionaryTests : UnitTest
     [Fact]
     public async Task Get_async_with_async_init_should_return_instance()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(AsyncInitializationFunc);
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>(AsyncInitializationFunc);
 
         HttpClient result = await httpClientSingleton.Get("arst", 100);
 
@@ -42,29 +41,9 @@ public class SingletonDictionaryTests : UnitTest
     [Fact]
     public async Task Get_async_with_key_with_async_init_should_return_instance()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(AsyncKeyInitializationFunc);
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>(AsyncKeyInitializationFunc);
 
         HttpClient result = await httpClientSingleton.Get("arst", 100);
-
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
-    public async Task Get_async_with_async_init_with_null_params_should_return_instance()
-    {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(AsyncInitializationFunc);
-
-        HttpClient result = await httpClientSingleton.Get("arst", null);
-
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
-    public async Task Get_async_with_async_init_with_empty_params_should_return_instance()
-    {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(AsyncInitializationFunc);
-
-        HttpClient result = await httpClientSingleton.Get("arst");
 
         result.Should().NotBeNull();
     }
@@ -72,41 +51,19 @@ public class SingletonDictionaryTests : UnitTest
     [Fact]
     public async Task Get_async_with_sync_init_should_return_instance()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(InitializeFunc);
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>(InitializeFunc);
 
         HttpClient result = await httpClientSingleton.Get("arst", 100);
 
         result.Should().NotBeNull();
     }
 
-    [Fact]
-    public async Task Get_async_and_sync_init_with_empty_object_param_should_return_instance()
+    private static HttpClient InitializeFunc(int timeout)
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(InitializeFunc);
-
-        HttpClient result = await httpClientSingleton.Get("arst");
-
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
-    public async Task Get_async_and_sync_init_with_null_object_param_should_return_instance()
-    {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(InitializeFunc);
-
-        HttpClient result = await httpClientSingleton.Get("arst", null);
-
-        result.Should().NotBeNull();
-    }
-
-    private static HttpClient InitializeFunc(object[] arg)
-    {
-        var httpClient = new HttpClient();
-
-        if (arg.Populated())
+        var httpClient = new HttpClient
         {
-            httpClient.Timeout = TimeSpan.FromSeconds((int) arg[0]);
-        }
+            Timeout = TimeSpan.FromSeconds(timeout)
+        };
 
         return httpClient;
     }
@@ -114,7 +71,7 @@ public class SingletonDictionaryTests : UnitTest
     [Fact]
     public void Get_sync_with_sync_init_should_return_instance()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(InitializeFunc);
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>(InitializeFunc);
 
         HttpClient result = httpClientSingleton.GetSync("arst", 100);
 
@@ -122,29 +79,9 @@ public class SingletonDictionaryTests : UnitTest
     }
 
     [Fact]
-    public void Get_sync_and_sync_init_with_empty_object_param_should_return_instance()
-    {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(InitializeFunc);
-
-        HttpClient result = httpClientSingleton.GetSync("arst");
-
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
-    public void Get_sync_and_sync_init_with_null_object_param_should_return_instance()
-    {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(InitializeFunc);
-
-        HttpClient result = httpClientSingleton.GetSync("arst", null);
-
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
     public async Task Multiple_get_should_return_same_instance()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(AsyncInitializationFunc);
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>(AsyncInitializationFunc);
 
         HttpClient client1 = await httpClientSingleton.Get("test", 200);
         HttpClient client2 = await httpClientSingleton.Get("test", 100);
@@ -159,7 +96,7 @@ public class SingletonDictionaryTests : UnitTest
     [Fact]
     public async Task Parallel_get_should_return_same_instance()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(AsyncInitializationFunc);
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>(AsyncInitializationFunc);
 
         // Don't do this in real usage, make keys unique to their parameters
         Task<HttpClient> task1 = httpClientSingleton.Get("test", 100).AsTask();
@@ -174,13 +111,13 @@ public class SingletonDictionaryTests : UnitTest
     [Fact]
     public async Task Get_DisposeAsync_should_throw_after_disposing()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(_ => new HttpClient());
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>(_ => new HttpClient());
 
-        _ = await httpClientSingleton.Get("test");
+        _ = await httpClientSingleton.Get("test", 100);
 
         await httpClientSingleton.DisposeAsync();
 
-        Func<Task> act = async () => _ = await httpClientSingleton.Get("test");
+        Func<Task> act = async () => _ = await httpClientSingleton.Get("test", 100);
 
         await act.Should().ThrowAsync<ObjectDisposedException>();
     }
@@ -190,26 +127,26 @@ public class SingletonDictionaryTests : UnitTest
     {
         var cancellationToken = new CancellationToken();
 
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(async (key, token, obj) =>
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>(async (key, token, timeout) =>
         {
             token.Should().Be(cancellationToken);
             return new HttpClient();
         });
 
-        _ = await httpClientSingleton.Get("test", cancellationToken);
+        _ = await httpClientSingleton.Get("test", 100, cancellationToken);
     }
 
     [Fact]
     public async Task GetSync_Dispose_should_throw_after_disposing()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(_ => new HttpClient());
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>(_ => new HttpClient());
 
-        _ = await httpClientSingleton.Get("test");
+        _ = await httpClientSingleton.Get("test", 100);
 
         // ReSharper disable once MethodHasAsyncOverload
         httpClientSingleton.Dispose();
 
-        Action act = () => _ = httpClientSingleton.GetSync("test");
+        Action act = () => _ = httpClientSingleton.GetSync("test", 100);
 
         act.Should().Throw<ObjectDisposedException>();
     }
@@ -217,32 +154,32 @@ public class SingletonDictionaryTests : UnitTest
     [Fact]
     public async Task Dispose_with_nondisposable_should_not_throw()
     {
-        var httpClientSingleton = new SingletonDictionary<object>(_ => new object());
+        var objectSingleton = new SingletonDictionary<object, int>(_ => new object());
 
-        _ = await httpClientSingleton.Get("test");
+        _ = await objectSingleton.Get("test", 100);
 
         // ReSharper disable once MethodHasAsyncOverload
-        httpClientSingleton.Dispose();
+        objectSingleton.Dispose();
     }
 
     [Fact]
     public async Task DisposeAsync_with_nondisposable_should_not_throw()
     {
-        var httpClientSingleton = new SingletonDictionary<object>(_ => new object());
+        var objectSingleton = new SingletonDictionary<object, int>(_ => new object());
 
-        _ = await httpClientSingleton.Get("test");
+        _ = await objectSingleton.Get("test", 100);
 
-        await httpClientSingleton.DisposeAsync();
+        await objectSingleton.DisposeAsync();
     }
 
     [Fact]
     public void Remove_sync_should_remove_instance()
     {
-        var httpClientSingleton = new SingletonDictionary<HttpClient>(InitializeFunc);
+        var httpClientSingleton = new SingletonDictionary<HttpClient, int>(InitializeFunc);
 
         HttpClient result = httpClientSingleton.GetSync("arst", 100);
 
-        httpClientSingleton.RemoveSync("arst", CancellationToken);
+        httpClientSingleton.RemoveSync("arst");
 
         result = httpClientSingleton.GetSync("arst", 200);
 
@@ -250,24 +187,24 @@ public class SingletonDictionaryTests : UnitTest
     }
 
 
-    private static async ValueTask<HttpClient> AsyncInitializationFunc(object[] arg)
+    private static async ValueTask<HttpClient> AsyncInitializationFunc(int timeout)
     {
-        var httpClient = new HttpClient();
-
-        if (arg.Populated())
-            httpClient.Timeout = TimeSpan.FromSeconds((int) arg[0]);
+        var httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(timeout)
+        };
 
         await Task.Delay(100);
 
         return httpClient;
     }
 
-    private static async ValueTask<HttpClient> AsyncKeyInitializationFunc(string key, object[] arg)
+    private static async ValueTask<HttpClient> AsyncKeyInitializationFunc(string key, int timeout)
     {
-        var httpClient = new HttpClient();
-
-        if (arg.Populated())
-            httpClient.Timeout = TimeSpan.FromSeconds((int) arg[0]);
+        var httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(timeout)
+        };
 
         await Task.Delay(100);
 
