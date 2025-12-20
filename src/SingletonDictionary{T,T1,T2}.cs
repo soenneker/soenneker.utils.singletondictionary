@@ -116,7 +116,7 @@ public sealed partial class SingletonDictionary<T, T1, T2> : ISingletonDictionar
 
             (T1 arg1, T2 arg2) = argFactory();
 
-            instance = await GetInternal(key, cancellationToken, arg1, arg2).NoSync();
+            instance = await GetInternal(key, arg1, arg2, cancellationToken).NoSync();
             _dictionary.TryAdd(key, instance);
         }
 
@@ -143,7 +143,7 @@ public sealed partial class SingletonDictionary<T, T1, T2> : ISingletonDictionar
 
             (T1 arg1, T2 arg2) = argFactory();
 
-            instance = GetInternalSync(key, cancellationToken, arg1, arg2);
+            instance = GetInternalSync(key, arg1, arg2, cancellationToken);
             _dictionary.TryAdd(key, instance);
         }
 
@@ -164,7 +164,7 @@ public sealed partial class SingletonDictionary<T, T1, T2> : ISingletonDictionar
             if (_dictionary.TryGetValue(key, out instance))
                 return instance;
 
-            instance = await GetInternal(key, cancellationToken, arg1, arg2).NoSync();
+            instance = await GetInternal(key, arg1, arg2, cancellationToken).NoSync();
             _dictionary.TryAdd(key, instance);
         }
 
@@ -185,14 +185,14 @@ public sealed partial class SingletonDictionary<T, T1, T2> : ISingletonDictionar
             if (_dictionary.TryGetValue(key, out instance))
                 return instance;
 
-            instance = GetInternalSync(key, cancellationToken, arg1, arg2);
+            instance = GetInternalSync(key, arg1, arg2, cancellationToken);
             _dictionary.TryAdd(key, instance);
         }
 
         return instance;
     }
 
-    private ValueTask<T> GetInternal(string key, CancellationToken cancellationToken, T1 arg1, T2 arg2)
+    private ValueTask<T> GetInternal(string key, T1 arg1, T2 arg2, CancellationToken cancellationToken)
     {
         if (_initializationType is null)
             throw new InvalidOperationException("Initialization func for SingletonDictionary cannot be null");
@@ -240,7 +240,7 @@ public sealed partial class SingletonDictionary<T, T1, T2> : ISingletonDictionar
         }
     }
 
-    private T GetInternalSync(string key, CancellationToken cancellationToken, T1 arg1, T2 arg2)
+    private T GetInternalSync(string key, T1 arg1, T2 arg2, CancellationToken cancellationToken)
     {
         if (_initializationType is null)
             throw new InvalidOperationException("Initialization func for SingletonDictionary cannot be null");
