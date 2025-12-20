@@ -90,6 +90,61 @@ public sealed partial class SingletonDictionary<T, T1> : ISingletonDictionary<T,
         return dict.TryGetValue(key, out value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ValueTask<T> Get(string key, Func<T1> argFactory, CancellationToken cancellationToken = default)
+        => GetCore(key, argFactory, cancellationToken);
+
+    public async ValueTask<T> GetCore(string key, Func<T1> argFactory, CancellationToken cancellationToken)
+    {
+        ThrowIfDisposed();
+
+        if (_dictionary!.TryGetValue(key, out T? instance))
+            return instance;
+
+        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        {
+            ThrowIfDisposed();
+
+            if (_dictionary.TryGetValue(key, out instance))
+                return instance;
+
+            T1 arg = argFactory();
+
+            instance = await GetInternal(key, cancellationToken, arg).NoSync();
+            _dictionary.TryAdd(key, instance);
+        }
+
+        return instance;
+    }
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T GetSync(string key, Func<T1> argFactory, CancellationToken cancellationToken = default)
+        => GetCoreSync(key, argFactory, cancellationToken);
+
+    public T GetCoreSync(string key, Func<T1> argFactory, CancellationToken cancellationToken)
+    {
+        ThrowIfDisposed();
+
+        if (_dictionary!.TryGetValue(key, out T? instance))
+            return instance;
+
+        using (_lock.Lock(cancellationToken))
+        {
+            ThrowIfDisposed();
+
+            if (_dictionary.TryGetValue(key, out instance))
+                return instance;
+
+            T1 arg = argFactory();
+
+            instance = GetInternalSync(key, cancellationToken, arg);
+            _dictionary.TryAdd(key, instance);
+        }
+
+        return instance;
+    }
+
     public async ValueTask<T> GetCore(string key, T1 arg, CancellationToken cancellationToken)
     {
         ThrowIfDisposed();

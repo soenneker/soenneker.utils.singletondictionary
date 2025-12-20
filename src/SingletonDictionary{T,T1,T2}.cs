@@ -96,6 +96,60 @@ public sealed partial class SingletonDictionary<T, T1, T2> : ISingletonDictionar
         return dict.TryGetValue(key, out value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ValueTask<T> Get(string key, Func<(T1, T2)> argFactory, CancellationToken cancellationToken = default)
+        => GetCore(key, argFactory, cancellationToken);
+
+    public async ValueTask<T> GetCore(string key, Func<(T1, T2)> argFactory, CancellationToken cancellationToken)
+    {
+        ThrowIfDisposed();
+
+        if (_dictionary!.TryGetValue(key, out T? instance))
+            return instance;
+
+        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        {
+            ThrowIfDisposed();
+
+            if (_dictionary.TryGetValue(key, out instance))
+                return instance;
+
+            (T1 arg1, T2 arg2) = argFactory();
+
+            instance = await GetInternal(key, cancellationToken, arg1, arg2).NoSync();
+            _dictionary.TryAdd(key, instance);
+        }
+
+        return instance;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T GetSync(string key, Func<(T1, T2)> argFactory, CancellationToken cancellationToken = default)
+        => GetCoreSync(key, argFactory, cancellationToken);
+
+    public T GetCoreSync(string key, Func<(T1, T2)> argFactory, CancellationToken cancellationToken)
+    {
+        ThrowIfDisposed();
+
+        if (_dictionary!.TryGetValue(key, out T? instance))
+            return instance;
+
+        using (_lock.Lock(cancellationToken))
+        {
+            ThrowIfDisposed();
+
+            if (_dictionary.TryGetValue(key, out instance))
+                return instance;
+
+            (T1 arg1, T2 arg2) = argFactory();
+
+            instance = GetInternalSync(key, cancellationToken, arg1, arg2);
+            _dictionary.TryAdd(key, instance);
+        }
+
+        return instance;
+    }
+
     public async ValueTask<T> GetCore(string key, T1 arg1, T2 arg2, CancellationToken cancellationToken)
     {
         ThrowIfDisposed();

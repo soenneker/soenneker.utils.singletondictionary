@@ -21,6 +21,16 @@ public partial interface ISingletonDictionary<T, T1> : IDisposable, IAsyncDispos
     [Pure]
     ValueTask<T> Get(string key, T1 arg, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Utilizes double-check async locking to guarantee there's only one instance of the object. It's lazy; it's initialized only when retrieving.
+    /// Uses a factory function to create the argument, which is only called if the instance needs to be created.
+    /// </summary>
+    /// <remarks>The initialization func needs to be set before calling this, either in the ctor or via the other methods</remarks>
+    /// <exception cref="ObjectDisposedException"></exception>
+    /// <exception cref="NullReferenceException"></exception>
+    [Pure]
+    ValueTask<T> Get(string key, Func<T1> argFactory, CancellationToken cancellationToken = default);
+
     bool TryGet(string key, out T? value);
 
     /// <summary>
@@ -32,6 +42,17 @@ public partial interface ISingletonDictionary<T, T1> : IDisposable, IAsyncDispos
     /// <exception cref="NullReferenceException"></exception>
     [Pure]
     T GetSync(string key, T1 arg, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// <see cref="Get(string, Func{T1}, CancellationToken)"/> should be used instead of this if possible. This method can block the calling thread! It's lazy; it's initialized only when retrieving.
+    /// Uses a factory function to create the argument, which is only called if the instance needs to be created.
+    /// This can still be used with an async initialization func, but it will block on the func.
+    /// </summary>
+    /// <remarks>The initialization func needs to be set before calling this, either in the ctor or via the other methods</remarks>
+    /// <exception cref="ObjectDisposedException"></exception>
+    /// <exception cref="NullReferenceException"></exception>
+    [Pure]
+    T GetSync(string key, Func<T1> argFactory, CancellationToken cancellationToken = default);
 
     void SetInitialization(Func<string, T1, ValueTask<T>> func);
 
