@@ -1,5 +1,4 @@
-﻿using Nito.AsyncEx;
-using Soenneker.Atomics.ValueBools;
+﻿using Soenneker.Atomics.ValueBools;
 using Soenneker.Extensions.ValueTask;
 using Soenneker.Utils.SingletonDictionary.Abstract;
 using Soenneker.Utils.SingletonDictionary.Enums;
@@ -9,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Soenneker.Asyncs.Locks;
 
 namespace Soenneker.Utils.SingletonDictionary;
 
@@ -101,7 +101,8 @@ public sealed partial class SingletonDictionary<T, T1> : ISingletonDictionary<T,
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             ThrowIfDisposed();
 
@@ -129,7 +130,7 @@ public sealed partial class SingletonDictionary<T, T1> : ISingletonDictionary<T,
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (_lock.Lock(cancellationToken))
+        using (_lock.LockSync(cancellationToken))
         {
             ThrowIfDisposed();
 
@@ -152,7 +153,8 @@ public sealed partial class SingletonDictionary<T, T1> : ISingletonDictionary<T,
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             ThrowIfDisposed();
 
@@ -173,7 +175,7 @@ public sealed partial class SingletonDictionary<T, T1> : ISingletonDictionary<T,
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (_lock.Lock(cancellationToken))
+        using (_lock.LockSync(cancellationToken))
         {
             ThrowIfDisposed();
 
@@ -347,7 +349,8 @@ public sealed partial class SingletonDictionary<T, T1> : ISingletonDictionary<T,
             return;
         }
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             ThrowIfDisposed();
 
@@ -366,7 +369,7 @@ public sealed partial class SingletonDictionary<T, T1> : ISingletonDictionary<T,
             return;
         }
 
-        using (_lock.Lock(cancellationToken))
+        using (_lock.LockSync(cancellationToken))
         {
             ThrowIfDisposed();
 

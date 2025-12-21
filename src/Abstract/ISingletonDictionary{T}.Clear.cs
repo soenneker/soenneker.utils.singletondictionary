@@ -16,3 +16,4 @@ public partial interface ISingletonDictionary<T>
     ValueTask Clear(CancellationToken cancellationToken = default);
 }
 
+

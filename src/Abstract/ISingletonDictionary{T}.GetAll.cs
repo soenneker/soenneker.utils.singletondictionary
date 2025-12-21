@@ -53,3 +53,4 @@ public partial interface ISingletonDictionary<T>
     ValueTask<List<T>> GetValues(CancellationToken cancellationToken = default);
 }
 
+

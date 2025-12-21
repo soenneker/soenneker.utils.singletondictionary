@@ -11,7 +11,7 @@ public sealed partial class SingletonDictionary<T, T1>
     {
         ThrowIfDisposed();
 
-        using (_lock.Lock())
+        using (_lock.LockSync())
         {
             ThrowIfDisposed();
 
@@ -30,7 +30,8 @@ public sealed partial class SingletonDictionary<T, T1>
     {
         ThrowIfDisposed();
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             ThrowIfDisposed();
 

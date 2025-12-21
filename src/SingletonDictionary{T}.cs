@@ -1,4 +1,3 @@
-using Nito.AsyncEx;
 using Soenneker.Atomics.ValueBools;
 using Soenneker.Extensions.ValueTask;
 using Soenneker.Utils.SingletonDictionary.Abstract;
@@ -9,9 +8,11 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Soenneker.Asyncs.Locks;
 
 namespace Soenneker.Utils.SingletonDictionary;
 
+///<inheritdoc cref="ISingletonDictionary{T}"/>
 public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 {
     private ConcurrentDictionary<string, T>? _dictionary;
@@ -72,8 +73,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ValueTask<T> Get(string key, CancellationToken cancellationToken = default)
-        => GetCore(key, cancellationToken);
+    public ValueTask<T> Get(string key, CancellationToken cancellationToken = default) => GetCore(key, cancellationToken);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGet(string key, out T? value)
@@ -97,14 +97,16 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             ThrowIfDisposed();
 
             if (_dictionary.TryGetValue(key, out instance))
                 return instance;
 
-            instance = await GetInternal(key, cancellationToken).NoSync();
+            instance = await GetInternal(key, cancellationToken)
+                .NoSync();
             _dictionary.TryAdd(key, instance);
         }
 
@@ -118,7 +120,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (_lock.Lock(cancellationToken))
+        using (_lock.LockSync(cancellationToken))
         {
             ThrowIfDisposed();
 
@@ -191,19 +193,22 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
                 if (_asyncKeyFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
-                return _asyncKeyFunc(key).AwaitSync();
+                return _asyncKeyFunc(key)
+                    .AwaitSync();
 
             case InitializationType.AsyncKeyTokenValue:
                 if (_asyncKeyTokenFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
-                return _asyncKeyTokenFunc(key, cancellationToken).AwaitSync();
+                return _asyncKeyTokenFunc(key, cancellationToken)
+                    .AwaitSync();
 
             case InitializationType.AsyncValue:
                 if (_asyncFunc is null)
                     throw new NullReferenceException("Initialization func for SingletonDictionary cannot be null");
 
-                return _asyncFunc().AwaitSync();
+                return _asyncFunc()
+                    .AwaitSync();
 
             case InitializationType.SyncKeyValue:
                 if (_keyFunc is null)
@@ -288,16 +293,19 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
 
         if (_dictionary!.TryRemove(key, out T? instance))
         {
-            await DisposeRemovedInstance(instance).NoSync();
+            await DisposeRemovedInstance(instance)
+                .NoSync();
             return;
         }
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             ThrowIfDisposed();
 
             if (_dictionary is not null && _dictionary.TryRemove(key, out instance))
-                await DisposeRemovedInstance(instance).NoSync();
+                await DisposeRemovedInstance(instance)
+                    .NoSync();
         }
     }
 
@@ -311,7 +319,7 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
             return;
         }
 
-        using (_lock.Lock(cancellationToken))
+        using (_lock.LockSync(cancellationToken))
         {
             ThrowIfDisposed();
 
@@ -352,7 +360,8 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
         foreach (KeyValuePair<string, T> kvp in dict)
         {
             if (dict.TryRemove(kvp.Key, out T? instance))
-                await DisposeRemovedInstance(instance).NoSync();
+                await DisposeRemovedInstance(instance)
+                    .NoSync();
         }
     }
 
@@ -364,7 +373,8 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
                 disposable.Dispose();
                 break;
             case IAsyncDisposable asyncDisposable:
-                asyncDisposable.DisposeAsync().AwaitSync();
+                asyncDisposable.DisposeAsync()
+                               .AwaitSync();
                 break;
         }
     }
@@ -374,7 +384,8 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
         switch (instance)
         {
             case IAsyncDisposable asyncDisposable:
-                await asyncDisposable.DisposeAsync().NoSync();
+                await asyncDisposable.DisposeAsync()
+                                     .NoSync();
                 break;
             case IDisposable disposable:
                 disposable.Dispose();
@@ -389,4 +400,3 @@ public sealed partial class SingletonDictionary<T> : ISingletonDictionary<T>
             throw new ObjectDisposedException(nameof(SingletonDictionary<T>));
     }
 }
-

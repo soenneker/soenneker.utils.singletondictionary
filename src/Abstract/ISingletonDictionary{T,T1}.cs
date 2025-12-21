@@ -31,6 +31,14 @@ public partial interface ISingletonDictionary<T, T1> : IDisposable, IAsyncDispos
     [Pure]
     ValueTask<T> Get(string key, Func<T1> argFactory, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Attempts to retrieve a value from the dictionary without initializing if it doesn't exist.
+    /// </summary>
+    /// <param name="key">The key to look up.</param>
+    /// <param name="value">When this method returns, contains the value associated with the specified key, if found; otherwise, the default value for the type of the value parameter.</param>
+    /// <returns>true if the dictionary contains an element with the specified key; otherwise, false.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the dictionary has been disposed.</exception>
+    [Pure]
     bool TryGet(string key, out T? value);
 
     /// <summary>
@@ -54,16 +62,52 @@ public partial interface ISingletonDictionary<T, T1> : IDisposable, IAsyncDispos
     [Pure]
     T GetSync(string key, Func<T1> argFactory, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Sets the initialization function that will be used to create instances when they are requested.
+    /// The function receives the key and an argument of type T1 as parameters and returns a ValueTask with the instance.
+    /// </summary>
+    /// <param name="func">The async function that takes a key and an argument of type T1, and returns the instance to be cached.</param>
+    /// <exception cref="Exception">Thrown when attempting to set initialization after it has already been set.</exception>
     void SetInitialization(Func<string, T1, ValueTask<T>> func);
 
+    /// <summary>
+    /// Sets the initialization function that will be used to create instances when they are requested.
+    /// The function receives the key, cancellation token, and an argument of type T1 as parameters and returns a ValueTask with the instance.
+    /// </summary>
+    /// <param name="func">The async function that takes a key, cancellation token, and an argument of type T1, and returns the instance to be cached.</param>
+    /// <exception cref="Exception">Thrown when attempting to set initialization after it has already been set.</exception>
     void SetInitialization(Func<string, CancellationToken, T1, ValueTask<T>> func);
 
+    /// <summary>
+    /// Sets the initialization function that will be used to create instances when they are requested.
+    /// The function receives an argument of type T1 as a parameter and returns a ValueTask with the instance.
+    /// </summary>
+    /// <param name="func">The async function that takes an argument of type T1 and returns the instance to be cached.</param>
+    /// <exception cref="Exception">Thrown when attempting to set initialization after it has already been set.</exception>
     void SetInitialization(Func<T1, ValueTask<T>> func);
 
+    /// <summary>
+    /// Sets the initialization function that will be used to create instances when they are requested.
+    /// The function receives an argument of type T1 as a parameter and returns the instance synchronously.
+    /// </summary>
+    /// <param name="func">The synchronous function that takes an argument of type T1 and returns the instance to be cached.</param>
+    /// <exception cref="Exception">Thrown when attempting to set initialization after it has already been set.</exception>
     void SetInitialization(Func<T1, T> func);
 
+    /// <summary>
+    /// Sets the initialization function that will be used to create instances when they are requested.
+    /// The function receives the key and an argument of type T1 as parameters and returns the instance synchronously.
+    /// </summary>
+    /// <param name="func">The synchronous function that takes a key and an argument of type T1, and returns the instance to be cached.</param>
+    /// <exception cref="Exception">Thrown when attempting to set initialization after it has already been set.</exception>
     void SetInitialization(Func<string, T1, T> func);
 
+    /// <summary>
+    /// Sets the initialization function that will be used to create instances when they are requested.
+    /// The function receives the key, cancellation token, and an argument of type T1 as parameters and returns the instance synchronously.
+    /// </summary>
+    /// <param name="func">The synchronous function that takes a key, cancellation token, and an argument of type T1, and returns the instance to be cached.</param>
+    /// <exception cref="Exception">Thrown when attempting to set initialization after it has already been set.</exception>
     void SetInitialization(Func<string, CancellationToken, T1, T> func);
 
     /// <summary>
