@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Soenneker.Extensions.ValueTask;
 
 namespace Soenneker.Utils.SingletonDictionary;
 
@@ -10,7 +11,7 @@ public sealed partial class SingletonDictionary<T>
     {
         ThrowIfDisposed();
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken).NoSync())
         {
             ThrowIfDisposed();
 
@@ -22,7 +23,7 @@ public sealed partial class SingletonDictionary<T>
     {
         ThrowIfDisposed();
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken).NoSync())
         {
             ThrowIfDisposed();
 
@@ -34,7 +35,7 @@ public sealed partial class SingletonDictionary<T>
     {
         ThrowIfDisposed();
 
-        using (await _lock.LockAsync(cancellationToken).ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken).NoSync())
         {
             ThrowIfDisposed();
 
@@ -46,7 +47,7 @@ public sealed partial class SingletonDictionary<T>
     {
         ThrowIfDisposed();
 
-        using (_lock.Lock())
+        using (_lock.LockSync())
         {
             ThrowIfDisposed();
 
@@ -58,7 +59,7 @@ public sealed partial class SingletonDictionary<T>
     {
         ThrowIfDisposed();
 
-        using (_lock.Lock())
+        using (_lock.LockSync())
         {
             ThrowIfDisposed();
 
@@ -70,7 +71,7 @@ public sealed partial class SingletonDictionary<T>
     {
         ThrowIfDisposed();
 
-        using (_lock.Lock())
+        using (_lock.LockSync())
         {
             ThrowIfDisposed();
 

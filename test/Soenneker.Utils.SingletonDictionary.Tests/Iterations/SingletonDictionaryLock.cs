@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Nito.AsyncEx;
+using Soenneker.Asyncs.Locks;
 using Soenneker.Extensions.ValueTask;
 using Soenneker.Utils.SingletonDictionary.Enums;
 
@@ -92,8 +92,8 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (await _lock.LockAsync(cancellationToken)
-                          .ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             if (_dictionary.TryGetValue(key, out instance))
                 return instance;
@@ -113,7 +113,7 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
         if (_dictionary!.TryGetValue(key, out T? instance))
             return instance;
 
-        using (_lock.Lock())
+        using (_lock.LockSync())
         {
             if (_dictionary.TryGetValue(key, out instance))
                 return instance;
@@ -276,8 +276,8 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
             return;
         }
 
-        using (await _lock.LockAsync(cancellationToken)
-                          .ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             if (_dictionary.TryGetValue(key, out instance))
             {
@@ -299,7 +299,7 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
             return;
         }
 
-        using (_lock.Lock(cancellationToken))
+        using (_lock.LockSync(cancellationToken))
         {
             if (_dictionary.TryGetValue(key, out instance))
             {
@@ -386,8 +386,8 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
     {
         ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionaryLock<T>));
 
-        using (await _lock.LockAsync(cancellationToken)
-                          .ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             return _dictionary is null ? new Dictionary<string, T>() : new Dictionary<string, T>(_dictionary);
         }
@@ -397,8 +397,8 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
     {
         ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionaryLock<T>));
 
-        using (await _lock.LockAsync(cancellationToken)
-                          .ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             return _dictionary?.Keys is { } keys ? [.. keys] : [];
         }
@@ -408,8 +408,8 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
     {
         ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionaryLock<T>));
 
-        using (await _lock.LockAsync(cancellationToken)
-                          .ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             return _dictionary?.Values is { } values ? [.. values] : [];
         }
@@ -419,7 +419,7 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
     {
         ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionaryLock<T>));
 
-        using (_lock.Lock())
+        using (_lock.LockSync())
         {
             return _dictionary is null ? new Dictionary<string, T>() : new Dictionary<string, T>(_dictionary);
         }
@@ -429,7 +429,7 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
     {
         ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionaryLock<T>));
 
-        using (_lock.Lock())
+        using (_lock.LockSync())
         {
             return _dictionary?.Keys is { } keys ? [.. keys] : [];
         }
@@ -439,7 +439,7 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
     {
         ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionaryLock<T>));
 
-        using (_lock.Lock())
+        using (_lock.LockSync())
         {
             return _dictionary?.Values is { } values ? [.. values] : [];
         }
@@ -449,7 +449,7 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
     {
         ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionaryLock<T>));
 
-        using (_lock.Lock())
+        using (_lock.LockSync())
         {
             if (_dictionary is null || _dictionary.IsEmpty)
                 return;
@@ -465,8 +465,8 @@ public sealed partial class SingletonDictionaryLock<T> : IDisposable, IAsyncDisp
     {
         ObjectDisposedException.ThrowIf(_disposed, nameof(SingletonDictionaryLock<T>));
 
-        using (await _lock.LockAsync(cancellationToken)
-                          .ConfigureAwait(false))
+        using (await _lock.Lock(cancellationToken)
+                          .NoSync())
         {
             if (_dictionary is null || _dictionary.IsEmpty)
                 return;
